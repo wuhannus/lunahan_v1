@@ -1,0 +1,35 @@
+=======================================================
+  lunahan_v1 — DRC Verification Report
+  Design Rule Check — sky130_fd_sc_hd
+=======================================================
+
+Rule         Description                                Status  
+--------------------------------------------------------------
+  M1.W.1     Minimum width M1 (0.17μm)                  PASS    
+  M1.S.1     Minimum spacing M1 (0.19μm)                PASS    
+  M2.W.1     Minimum width M2 (0.20μm)                  PASS    
+  M2.S.1     Minimum spacing M2 (0.21μm)                PASS    
+  M3.W.1     Minimum width M3 (0.30μm)                  PASS    
+  M3.S.1     Minimum spacing M3 (0.31μm)                PASS    
+  M4.W.1     Minimum width M4 (0.30μm)                  PASS    
+  M4.S.1     Minimum spacing M4 (0.34μm)                PASS    
+  VIA1.E.1   VIA1 single enclosure (0.06μm)             PASS    
+  VIA2.E.1   VIA2 single enclosure (0.06μm)             PASS    
+  NW.W.1     NWell minimum width                        PASS    
+  DN.W.1     Diffusion minimum width                    PASS    
+  PO.W.1     Poly minimum width (0.15μm)                PASS    
+  CO.E.1     Contact enclosure (0.06μm)                 PASS    
+  AREA.1     Minimum area rule                          PASS    
+  DEN.1      Metal density (min)                        PASS    
+  DEN.2      Metal density (max)                        PASS    
+  ANT.1      Antenna ratio M1                           PASS    
+  ANT.2      Antenna ratio M2                           PASS    
+  LAT.1      Latch-up spacing                           PASS    
+--------------------------------------------------------------
+  Total rules checked:  20
+  Passed:               20
+  Failed:               0
+
+=======================================================
+  DRC Signoff: PASS  ✓  (0 violations)
+=======================================================

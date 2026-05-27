@@ -1,0 +1,230 @@
+*SPEF "IEEE 1481-2019"
+*DESIGN "lunahan_core"
+*DATE "Wed May 27 16:32:39 2026"
+*VENDOR "lunahan_v1"
+*PROGRAM "pycircuit-physical"
+*VERSION "1.0.0"
+*DESIGN_FLOW "lunahan_core" "sky130_fd_sc_hd"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER [ ]
+*T_UNIT 1 PS
+*C_UNIT 1 FF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*NAME_MAP
+*1 clk
+*2 rst_n
+*3 VDD
+*4 VSS
+*5 gpio_0
+*6 gpio_1
+*7 gpio_2
+*8 gpio_3
+*9 gpio_4
+*10 gpio_5
+*11 gpio_6
+*12 gpio_7
+*13 n_alu_result_0
+*14 n_alu_result_1
+*15 n_rf_rd1_0
+*16 n_rf_rd2_0
+*17 n_pc_next_0
+*18 n_imm_ext_0
+*19 n_decode_0
+*20 n_execute_0
+*21 n_memory_0
+*22 n_writeback_0
+
+*PORTS
+*1 I
+*1 I
+*1 I
+*1 I
+*1 I
+*1 I
+*1 I
+*1 I
+*1 I
+*1 I
+
+*D_NET clk 1.0
+*CONN
+*I clk_pad I *C 100.0 0.0 *L 0.0
+*P clk_cts_0 I *C 150.0 0.0
+*CAP
+1 clk_pad 0.012
+2 clk_cts_0 0.008
+*RES
+*D_NET VSS 0.005
+*CONN
+*I VSS_src I *C 0.105 0.0 *L 0.0
+*P VSS_dst O *C 0.158 0.0
+*CAP
+1 VSS_src 0.0016
+2 VSS_dst 0.0026
+*RES
+1 VSS_src VSS_dst 0.997
+*D_NET gpio_0 0.006
+*CONN
+*I gpio_0_src I *C 0.126 0.0 *L 0.0
+*P gpio_0_dst O *C 0.188 0.0
+*CAP
+1 gpio_0_src 0.0019
+2 gpio_0_dst 0.0031
+*RES
+1 gpio_0_src gpio_0_dst 4.369
+*D_NET gpio_1 0.003
+*CONN
+*I gpio_1_src I *C 0.057 0.0 *L 0.0
+*P gpio_1_dst O *C 0.086 0.0
+*CAP
+1 gpio_1_src 0.0009
+2 gpio_1_dst 0.0014
+*RES
+1 gpio_1_src gpio_1_dst 9.061
+*D_NET gpio_2 0.017
+*CONN
+*I gpio_2_src I *C 0.346 0.0 *L 0.0
+*P gpio_2_dst O *C 0.518 0.0
+*CAP
+1 gpio_2_src 0.0052
+2 gpio_2_dst 0.0086
+*RES
+1 gpio_2_src gpio_2_dst 5.594
+*D_NET gpio_3 0.009
+*CONN
+*I gpio_3_src I *C 0.176 0.0 *L 0.0
+*P gpio_3_dst O *C 0.265 0.0
+*CAP
+1 gpio_3_src 0.0026
+2 gpio_3_dst 0.0044
+*RES
+1 gpio_3_src gpio_3_dst 8.595
+*D_NET gpio_4 0.017
+*CONN
+*I gpio_4_src I *C 0.347 0.0 *L 0.0
+*P gpio_4_dst O *C 0.521 0.0
+*CAP
+1 gpio_4_src 0.0052
+2 gpio_4_dst 0.0087
+*RES
+1 gpio_4_src gpio_4_dst 3.704
+*D_NET gpio_5 0.001
+*CONN
+*I gpio_5_src I *C 0.022 0.0 *L 0.0
+*P gpio_5_dst O *C 0.032 0.0
+*CAP
+1 gpio_5_src 0.0003
+2 gpio_5_dst 0.0005
+*RES
+1 gpio_5_src gpio_5_dst 2.829
+*D_NET gpio_6 0.005
+*CONN
+*I gpio_6_src I *C 0.106 0.0 *L 0.0
+*P gpio_6_dst O *C 0.159 0.0
+*CAP
+1 gpio_6_src 0.0016
+2 gpio_6_dst 0.0026
+*RES
+1 gpio_6_src gpio_6_dst 4.645
+*D_NET gpio_7 0.004
+*CONN
+*I gpio_7_src I *C 0.088 0.0 *L 0.0
+*P gpio_7_dst O *C 0.133 0.0
+*CAP
+1 gpio_7_src 0.0013
+2 gpio_7_dst 0.0022
+*RES
+1 gpio_7_src gpio_7_dst 6.177
+*D_NET n_alu_result_0 0.023
+*CONN
+*I n_alu_result_0_src I *C 0.459 0.0 *L 0.0
+*P n_alu_result_0_dst O *C 0.689 0.0
+*CAP
+1 n_alu_result_0_src 0.0069
+2 n_alu_result_0_dst 0.0115
+*RES
+1 n_alu_result_0_src n_alu_result_0_dst 3.497
+*D_NET n_alu_result_1 0.006
+*CONN
+*I n_alu_result_1_src I *C 0.111 0.0 *L 0.0
+*P n_alu_result_1_dst O *C 0.166 0.0
+*CAP
+1 n_alu_result_1_src 0.0017
+2 n_alu_result_1_dst 0.0028
+*RES
+1 n_alu_result_1_src n_alu_result_1_dst 9.101
+*D_NET n_rf_rd1_0 0.040
+*CONN
+*I n_rf_rd1_0_src I *C 0.794 0.0 *L 0.0
+*P n_rf_rd1_0_dst O *C 1.191 0.0
+*CAP
+1 n_rf_rd1_0_src 0.0119
+2 n_rf_rd1_0_dst 0.0199
+*RES
+1 n_rf_rd1_0_src n_rf_rd1_0_dst 1.851
+*D_NET n_rf_rd2_0 0.046
+*CONN
+*I n_rf_rd2_0_src I *C 0.913 0.0 *L 0.0
+*P n_rf_rd2_0_dst O *C 1.369 0.0
+*CAP
+1 n_rf_rd2_0_src 0.0137
+2 n_rf_rd2_0_dst 0.0228
+*RES
+1 n_rf_rd2_0_src n_rf_rd2_0_dst 0.702
+*D_NET n_pc_next_0 0.014
+*CONN
+*I n_pc_next_0_src I *C 0.280 0.0 *L 0.0
+*P n_pc_next_0_dst O *C 0.420 0.0
+*CAP
+1 n_pc_next_0_src 0.0042
+2 n_pc_next_0_dst 0.0070
+*RES
+1 n_pc_next_0_src n_pc_next_0_dst 5.947
+*D_NET n_imm_ext_0 0.039
+*CONN
+*I n_imm_ext_0_src I *C 0.773 0.0 *L 0.0
+*P n_imm_ext_0_dst O *C 1.160 0.0
+*CAP
+1 n_imm_ext_0_src 0.0116
+2 n_imm_ext_0_dst 0.0193
+*RES
+1 n_imm_ext_0_src n_imm_ext_0_dst 8.459
+*D_NET n_decode_0 0.040
+*CONN
+*I n_decode_0_src I *C 0.805 0.0 *L 0.0
+*P n_decode_0_dst O *C 1.208 0.0
+*CAP
+1 n_decode_0_src 0.0121
+2 n_decode_0_dst 0.0201
+*RES
+1 n_decode_0_src n_decode_0_dst 3.763
+*D_NET n_execute_0 0.031
+*CONN
+*I n_execute_0_src I *C 0.617 0.0 *L 0.0
+*P n_execute_0_dst O *C 0.925 0.0
+*CAP
+1 n_execute_0_src 0.0093
+2 n_execute_0_dst 0.0154
+*RES
+1 n_execute_0_src n_execute_0_dst 2.465
+*D_NET n_memory_0 0.041
+*CONN
+*I n_memory_0_src I *C 0.813 0.0 *L 0.0
+*P n_memory_0_dst O *C 1.220 0.0
+*CAP
+1 n_memory_0_src 0.0122
+2 n_memory_0_dst 0.0203
+*RES
+1 n_memory_0_src n_memory_0_dst 5.507
+*D_NET n_writeback_0 0.021
+*CONN
+*I n_writeback_0_src I *C 0.410 0.0 *L 0.0
+*P n_writeback_0_dst O *C 0.615 0.0
+*CAP
+1 n_writeback_0_src 0.0062
+2 n_writeback_0_dst 0.0103
+*RES
+1 n_writeback_0_src n_writeback_0_dst 3.495

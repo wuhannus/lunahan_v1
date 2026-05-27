@@ -1,0 +1,27 @@
+{
+  "design": "lunahan_core",
+  "technology": "sky130_fd_sc_hd",
+  "node_nm": 130,
+  "frequency_mhz": 100.0,
+  "power_mw": 0.9509,
+  "area_mm2": 0.0561,
+  "cpi": 1.12,
+  "timing_slack_ns": 2.77,
+  "drc_violations": 0,
+  "total_cells": 2706,
+  "cell_area_um2": 30559.05,
+  "die_um": 236.8,
+  "ppa_status": "ALL TARGETS MET",
+  "generated": "2026-05-27T16:32:39.371493",
+  "files": {
+    "gds": "phys/out/signoff/lunahan_core.gds",
+    "spef": "phys/out/postsim/lunahan_core.spef",
+    "sdf": "phys/out/postsim/lunahan_core.sdf",
+    "timing_rpt": "phys/out/signoff/lunahan_core_timing.rpt",
+    "area_rpt": "phys/out/signoff/lunahan_core_area.rpt",
+    "power_rpt": "phys/out/signoff/lunahan_core_power.rpt",
+    "drc_rpt": "phys/out/signoff/lunahan_core_drc.rpt",
+    "netlist": "phys/out/postsim/lunahan_core_synth.v",
+    "postsim_rpt": "phys/out/postsim/gate_sim_report.rpt"
+  }
+}

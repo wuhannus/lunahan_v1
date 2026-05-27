@@ -1,0 +1,21 @@
+=================================================================
+  lunahan_v1 — Power Analysis Report
+  Target: sky130_fd_sc_hd @ 100 MHz, 1.80V, 25°C
+=================================================================
+
+Power Breakdown                                         Value
+------------------------------------------------------------
+  Dynamic power (logic):                            728.85 μW
+  Dynamic power (clock tree):                       218.66 μW
+  Dynamic power (total):                            947.50 μW
+  Leakage power:                                      3.43 μW
+------------------------------------------------------------
+  TOTAL POWER:                                      950.93 μW
+                                                    0.9509 mW
+
+  Energy per cycle:             9.51 pJ
+  Power density:               31.12 mW/mm²
+
+  Target: < 50.0 mW     Status: MET ✓
+
+=================================================================
