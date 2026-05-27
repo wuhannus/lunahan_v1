@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lunahan_v1 — RISC-V RV32IMC Core Deliverable</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d2991d; --red: #f85149;
+    --purple: #a371f7;
+  }
+  * { margin:0; padding:0; box-sizing:border-box }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; line-height:1.6; padding:2rem }
+  .container { max-width:1000px; margin:0 auto }
+  h1 { font-size:1.8rem; margin-bottom:.25rem }
+  h2 { font-size:1.3rem; margin:2rem 0 1rem; padding-bottom:.4rem; border-bottom:1px solid var(--border) }
+  h3 { font-size:1.05rem; margin:1.2rem 0 .5rem }
+  .subtitle { color:var(--muted); margin-bottom:2rem }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:1.25rem; margin:1rem 0 }
+  .badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:.75rem; font-weight:600 }
+  .ok { background:#1a3a1a; color:var(--green) }
+  .info { background:#0a1f3a; color:var(--accent) }
+  .warn { background:#3a2e0a; color:var(--yellow) }
+  .p0 { background:#3a1a1a; color:var(--red) }
+  table { width:100%; border-collapse:collapse; margin:1rem 0 }
+  th,td { padding:.6rem .8rem; text-align:left; border-bottom:1px solid var(--border); vertical-align:top; font-size:.88rem }
+  th { color:var(--muted); font-weight:600; font-size:.82rem; white-space:nowrap }
+  .number { text-align:right; font-variant-numeric:tabular-nums }
+  ul,ol { padding-left:1.5rem; margin:.5rem 0 }
+  li { margin:.3rem 0 }
+  .hl { border-left:3px solid var(--green); padding:.5rem 1rem; margin:.75rem 0; border-radius:0 6px 6px 0; background:#1a2a1a; font-size:.9rem }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem }
+  .kpi { text-align:center; padding:1rem; background:var(--card); border-radius:8px; border:1px solid var(--border) }
+  .kpi .val { font-size:2rem; font-weight:700; color:var(--accent) }
+  .kpi .lbl { color:var(--muted); font-size:.82rem; margin-top:.25rem }
+  .diagram { font-family:"SF Mono",Monaco,Consolas,monospace; font-size:.76rem; line-height:1.85; padding:1rem; background:#0d1117; border-radius:6px; border:1px solid var(--border); white-space:pre; overflow-x:auto }
+  .files { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
+  .filecard { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:.75rem }
+  .filecard .name { color:var(--accent); font-family:monospace; font-size:.82rem }
+  .filecard .size { color:var(--muted); font-size:.75rem }
+  pre { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:1rem; overflow-x:auto; font-size:.82rem }
+  code { font-family:"SF Mono",Monaco,Consolas,monospace; font-size:.82rem }
+  hr { border:0; border-top:1px solid var(--border); margin:1.5rem 0 }
+  .footer { color:var(--muted); font-size:.8rem; margin-top:3rem; text-align:center }
+  .step { margin:.5rem 0; padding:.5rem .75rem; border-radius:6px; font-size:.88rem }
+  .step-0 { background:var(--card); border-left:3px solid var(--accent) }
+  .step-1 { background:var(--card); border-left:3px solid var(--purple) }
+  .step-2 { background:var(--card); border-left:3px solid var(--yellow) }
+  .step-3 { background:var(--card); border-left:3px solid var(--green) }
+  .step-4 { background:var(--card); border-left:3px solid #d2991d }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>lunahan_v1 — RISC-V RV32IMC Core</h1>
+<p class="subtitle">XiangShan methodology × pyCircuit agile flow · Python → MLIR → Verilog → GDS · v1.0.0</p>
+
+<div class="grid">
+  <div class="kpi"><div class="val">13</div><div class="lbl">Files delivered</div></div>
+  <div class="kpi"><div class="val">6,604</div><div class="lbl">Doc lines</div></div>
+  <div class="kpi"><div class="val">3,983</div><div class="lbl">RTL/TB code lines</div></div>
+  <div class="kpi"><div class="val">10,587</div><div class="lbl">Total lines</div></div>
+</div>
+
+<!-- ============================================================ -->
+<h2>1. Philosophy &amp; Origins</h2>
+
+<div class="card">
+  <div class="grid">
+    <div>
+      <h3><span class="badge info">XiangShan</span> Methodology</h3>
+      <ul>
+        <li>Silicon-proven microarchitecture (28nm/14nm tapeouts)</li>
+        <li>5-stage pipeline discipline with structured stages</li>
+        <li>RISC-V spec-driven design — architecture first, implementation second</li>
+        <li>Gate-first: MLIR verifiers &amp; passes before semantic changes</li>
+        <li>Physical credibility: PPA metrics tied to known-good baselines</li>
+      </ul>
+    </div>
+    <div>
+      <h3><span class="badge info">pyCircuit</span> Agile Flow</h3>
+      <ul>
+        <li>Python-native hardware description (V5 cycle-aware DSL)</li>
+        <li>MLIR intermediate representation — multi-level optimization</li>
+        <li>Two-phase tick/transfer simulation model</li>
+        <li>Auto Verilog emission for physical design</li>
+        <li>3-tier CI gates (G0/G1/G2/G3) for quality enforcement</li>
+      </ul>
+    </div>
+  </div>
+  <div class="hl">
+    <strong>lunahan_v1 unifies both:</strong> XiangShan's battle-tested RISC-V processor methodology implemented through pyCircuit's Python-native agile design flow. The result is a physically-credible RISC-V core that can be designed, verified, and taped out in Python.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Architecture Overview</h2>
+
+<div class="card">
+  <h3>RISC-V RV32IMC — The Sweet Spot</h3>
+  <table>
+    <tr><th style="width:20%">Extension</th><th>Spec</th><th>Description</th></tr>
+    <tr><td><strong>RV32I</strong></td><td>47 instructions</td><td>Base integer ISA — load/store, arithmetic, logical, branch, jump, system</td></tr>
+    <tr><td><strong>M</strong></td><td>8 instructions</td><td>Integer multiply/divide — MUL, MULH, DIV, REM (hardware Booth multiplier)</td></tr>
+    <tr><td><strong>C</strong></td><td>27 instructions</td><td>Compressed — 16-bit instruction encoding for code density</td></tr>
+  </table>
+
+  <h4>5-Stage In-Order Pipeline</h4>
+  <div class="diagram">
+  PC ──► [IF] ──► [ID] ──► [EX] ──► [MEM] ──► [WB]
+          │        │        │        │         │
+     Instruction  Decode   ALU /    Data     Register
+       Fetch     + RegRd   Mult/    Memory   Writeback
+     (ICache)             Divide   (DCache)
+          │        │        │        │         │
+          └────────┴──forwarding paths───────┘
+          │                   │
+     BTB (64-entry)    Hazard Detection
+     Bimodal           (stall/flush)
+  </div>
+
+  <table>
+    <tr><th style="width:18%">Pipeline Feature</th><th>Implementation</th></tr>
+    <tr><td><strong>Hazard handling</strong></td><td>Full forwarding network (EX→EX, MEM→EX, WB→EX) + pipeline stall on load-use</td></tr>
+    <tr><td><strong>Branch prediction</strong></td><td>64-entry bimodal BTB, 2-bit saturating counter, mispredict penalty: 2 cycles</td></tr>
+    <tr><td><strong>Multiplier</strong></td><td>4-cycle Booth radix-4 multiplier (MUL/MULH/MULHU/MULHSU)</td></tr>
+    <tr><td><strong>Divider</strong></td><td>33-cycle restoring divider (DIV/DIVU/REM/REMU)</td></tr>
+    <tr><td><strong>I-Cache</strong></td><td>4KB direct-mapped, 16-byte line, single-cycle hit</td></tr>
+    <tr><td><strong>D-Cache</strong></td><td>4KB direct-mapped, 16-byte line, write-back, single-cycle hit</td></tr>
+    <tr><td><strong>Bus interface</strong></td><td>AXI4-Lite (32-bit address, 32-bit data)</td></tr>
+    <tr><td><strong>Target frequency</strong></td><td>100 MHz (sky130), target 0.9 IPC</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Build Flow — Python to GDS</h2>
+
+<div class="card">
+  <div class="step step-0"><strong>Phase 0 — Prerequisites:</strong> Python 3.10+, pyCircuit (pycc), Yosys, OpenROAD, sky130 PDK</div>
+  <div class="step step-1"><strong>Phase 1 — Python → MLIR:</strong> <code>python3 rtl/lunahan_core.py</code> → <code>lunahan_core.pyc</code> (MLIR pyc dialect)</div>
+  <div class="step step-2"><strong>Phase 2 — MLIR → Verilog/C++:</strong> <code>pycircuit build --target both</code> → Verilog RTL + C++ sim model</div>
+  <div class="step step-3"><strong>Phase 3 — Verilog → GDSII:</strong> <code>bash phys/scripts/run_all.sh</code> → Yosys synthesis → OpenROAD P&amp;R → GDS</div>
+  <div class="step step-4"><strong>Phase 4 — Signoff:</strong> Timing (STA), DRC, LVS, antenna, power analysis, SPEF/SDF extraction, post-layout gate-level simulation</div>
+
+  <pre style="margin-top:1rem">
+<span style="color:var(--purple)">lunahan_core.py</span>                    <span style="color:var(--muted)">RTL DESIGN</span>
+       │
+       ▼
+<span style="color:var(--accent)">lunahan_core.pyc</span>                   <span style="color:var(--muted)">MLIR EMISSION</span>
+       │
+       ├──────────────────────────┐
+       ▼                          ▼
+<span style="color:var(--yellow)">lunahan_core.v</span>                   <span style="color:var(--yellow)">sim/lunahan_core.cpp</span>  <span style="color:var(--muted)">VERILOG + C++ SIM</span>
+       │                          │
+       ▼                          ▼
+<span style="color:var(--yellow)">Yosys synthesis</span>                  <span style="color:var(--yellow)">pytest + RISCOF</span>          <span style="color:var(--muted)">SYNTHESIS + VERIFICATION</span>
+       │
+       ▼
+<span style="color:var(--green)">OpenROAD P&amp;R</span>                     <span style="color:var(--muted)">FLOORPLAN → PLACE → CTS → ROUTE</span>
+       │
+       ├──────────┬──────────┬──────────┐
+       ▼          ▼          ▼          ▼
+<span style="color:var(--green)">GDSII</span>    <span style="color:var(--green)">Timing.rpt</span>  <span style="color:var(--green)">Power.rpt</span>  <span style="color:var(--green)">DRC.rpt</span>  <span style="color:var(--muted)">SIGNOFF</span>
+       │
+       ▼
+<span style="color:var(--green)">Post-sim (.vcd + .sdf)</span>             <span style="color:var(--muted)">GATE-LEVEL VALIDATION</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>4. Deliverable Files</h2>
+
+<div class="files">
+  <div class="filecard">
+    <div class="name">README.md</div>
+    <div class="size">208 lines — Project overview, philosophy, setup</div>
+  </div>
+  <div class="filecard">
+    <div class="name">docs/architecture_spec.md</div>
+    <div class="size">362 lines — Full RV32IMC ISA spec (all 75+ instructions, CSRs, memory map)</div>
+  </div>
+  <div class="filecard">
+    <div class="name">docs/flow_diagram.md</div>
+    <div class="size">406 lines — Complete 4-phase build flow with commands</div>
+  </div>
+  <div class="filecard">
+    <div class="name">docs/microarchitecture.md</div>
+    <div class="size">662 lines — 5-stage pipeline detail, caches, BTB, hazards</div>
+  </div>
+  <div class="filecard">
+    <div class="name">docs/verification_plan.md</div>
+    <div class="size">450 lines — Unit/integration/system test plan, RISCOF, coverage</div>
+  </div>
+  <div class="filecard">
+    <div class="name">docs/physical_design.md</div>
+    <div class="size">533 lines — OpenROAD+sky130 flow, synthesis→GDS, signoff targets</div>
+  </div>
+  <div class="filecard">
+    <div class="name">rtl/lunahan_core.py</div>
+    <div class="size">2,406 lines — Complete pyCircuit V5 Python RTL</div>
+  </div>
+  <div class="filecard">
+    <div class="name">rtl/parameters.py</div>
+    <div class="size">426 lines — Config params + all RV32IMC opcode constants</div>
+  </div>
+  <div class="filecard">
+    <div class="name">sim/tb_lunahan.py</div>
+    <div class="size">1,151 lines — Testbench with AXI memory model + golden emulator</div>
+  </div>
+  <div class="filecard">
+    <div class="name">phys/scripts/run_all.sh</div>
+    <div class="size">Synthesis → Floorplan → Place → CTS → Route → GDS → Signoff</div>
+  </div>
+  <div class="filecard">
+    <div class="name">scripts/setup.sh</div>
+    <div class="size">One-shot setup: check deps, lint, emit MLIR, run sim</div>
+  </div>
+  <div class="filecard">
+    <div class="name">pyproject.toml</div>
+    <div class="size">Python package config (lunahan-v1)</div>
+  </div>
+  <div class="filecard">
+    <div class="name">LICENSE</div>
+    <div class="size">MIT License</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Verification Strategy</h2>
+
+<table>
+  <tr><th>Level</th><th>Tool</th><th>Coverage Target</th></tr>
+  <tr><td><strong>Unit tests</strong></td><td>pytest (per pipeline stage, per instruction)</td><td>100% instruction coverage</td></tr>
+  <tr><td><strong>Integration tests</strong></td><td>pyCircuit @testbench + CycleAwareTb</td><td>Pipeline hazard coverage (data/control)</td></tr>
+  <tr><td><strong>System tests</strong></td><td>RISCOF compliance suite (rv32i + rv32m + rv32c)</td><td>ISA compliance</td></tr>
+  <tr><td><strong>Random tests</strong></td><td>Random instruction generator + golden model comparison</td><td>95%+ code coverage</td></tr>
+  <tr><td><strong>Cross-backend</strong></td><td>C++ sim vs. Verilator equivalence check</td><td>Backend parity</td></tr>
+  <tr><td><strong>Post-layout</strong></td><td>Gate-level sim + SDF back-annotated</td><td>Timing-aware functional correctness</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>6. Physical Design Targets (sky130)</h2>
+
+<div class="grid-3">
+  <div class="kpi"><div class="val">100 MHz</div><div class="lbl">Target frequency</div></div>
+  <div class="kpi"><div class="val">&lt; 1 mm²</div><div class="lbl">Core area (est.)</div></div>
+  <div class="kpi"><div class="val">&lt; 50 mW</div><div class="lbl">Power (est.)</div></div>
+</div>
+
+<table>
+  <tr><th>Step</th><th>Tool</th><th>Output</th></tr>
+  <tr><td>Synthesis</td><td>Yosys + ABC</td><td><code>lunahan_core_synth.v</code> (mapped to sky130_fd_sc_hd)</td></tr>
+  <tr><td>Floorplan</td><td>OpenROAD</td><td><code>lunahan_core_fp.def</code></td></tr>
+  <tr><td>Placement</td><td>OpenROAD</td><td><code>lunahan_core_placed.def</code></td></tr>
+  <tr><td>CTS</td><td>OpenROAD</td><td><code>lunahan_core_cts.def</code></td></tr>
+  <tr><td>Routing</td><td>OpenROAD</td><td><code>lunahan_core_routed.def</code></td></tr>
+  <tr><td>GDSII</td><td>OpenROAD</td><td><code>lunahan_core.gds</code> (final layout)</td></tr>
+  <tr><td>Signoff</td><td>OpenROAD STA</td><td>Timing (WNS/TNS), DRC, Antenna, Power reports</td></tr>
+  <tr><td>Post-sim</td><td>Icarus Verilog</td><td>SDF-annotated gate-level VCD traces</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>7. Quick Start</h2>
+
+<div class="card">
+<pre><code><span style="color:var(--muted)"># Clone</span>
+git clone https://github.com/wuhannus/lunahan_v1.git
+cd lunahan_v1
+
+<span style="color:var(--muted)"># One-shot setup &amp; demo</span>
+bash scripts/setup.sh
+
+<span style="color:var(--muted)"># Generate MLIR</span>
+python3 rtl/lunahan_core.py
+
+<span style="color:var(--muted)"># Run functional simulation</span>
+python3 sim/tb_lunahan.py
+
+<span style="color:var(--muted)"># Run physical design flow (requires yosys + openroad + sky130 PDK)</span>
+bash phys/scripts/run_all.sh</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>8. Push to GitHub</h2>
+
+<div class="card">
+<pre><code><span style="color:var(--muted)"># Configure git identity</span>
+git config --global user.name "wuhannus"
+git config --global user.email "your-email@example.com"
+git commit --amend --reset-author
+
+<span style="color:var(--muted)"># Create repo on GitHub: https://github.com/new (name: lunahan_v1)</span>
+<span style="color:var(--muted)"># Then push:</span>
+git remote add origin https://github.com/wuhannus/lunahan_v1.git
+git branch -M main
+git push -u origin main</code></pre>
+</div>
+
+<hr>
+
+<div class="footer">
+  lunahan_v1 v1.0.0 · May 2025 · XiangShan methodology × pyCircuit agile flow · Python → MLIR → Verilog → GDS<br>
+  13 files · 6,604 doc lines · 3,983 code lines · MIT License · <code>file:///Users/wuhan0515/opencode/lunahan_v1/lunahan_v1_deliverable.html</code>
+</div>
+
+</div>
+</body>
+</html>
