@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>lunahan_v1 — Software-Hardware Interface</title>
+<style>
+  :root { --bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--yellow:#d2991d;--red:#f85149;--purple:#a371f7 }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;line-height:1.6;padding:2rem}
+  .container{max-width:1000px;margin:0 auto}
+  h1{font-size:1.8rem;margin-bottom:.25rem}
+  h2{font-size:1.3rem;margin:2rem 0 1rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+  h3{font-size:1.05rem;margin:1.2rem 0 .5rem}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1rem 0}
+  table{width:100%;border-collapse:collapse;margin:1rem 0}
+  th,td{padding:.6rem .8rem;border-bottom:1px solid var(--border);vertical-align:top;font-size:.88rem}
+  th{color:var(--muted);font-weight:600;font-size:.82rem;white-space:nowrap}
+  .ok{background:#1a3a1a;color:var(--green);padding:1px 8px;border-radius:10px;font-size:.75rem;font-weight:600}
+  pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:1rem;overflow-x:auto;font-size:.82rem}
+  code{font-family:"SF Mono",Monaco,Consolas,monospace;font-size:.82rem}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .diagram{font-family:monospace;font-size:.76rem;line-height:1.8;padding:1rem;background:#0d1117;border-radius:6px;border:1px solid var(--border);white-space:pre;overflow-x:auto}
+  .footer{color:var(--muted);font-size:.8rem;margin-top:3rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>lunahan_v1 — Software-Hardware Interface</h1>
+<p style="color:var(--muted);margin-bottom:2rem">Complete specification for writing software that perfectly matches the RV32IMC 5-stage pipeline</p>
+
+<h2>1. Architecture Overview</h2>
+
+<div class="diagram">
+┌─────────────────────────────────────────────────────┐
+│                    SOFTWARE                          │
+│  User App  │  Libraries  │  RTOS  │  Driver         │
+├─────────────────────────────────────────────────────┤
+│  ABI: ilp32, RV32IMC calling convention             │
+│  Compiler: GCC -march=rv32imc -mabi=ilp32 -O2       │
+├─────────────────────────────────────────────────────┤
+│                  HARDWARE                            │
+│  ┌─────────────────────────────────────────────┐    │
+│  │  IF ──► ID ──► EX ──► MEM ──► WB           │    │
+│  │   ICache   RF    ALU/MUL  DCache  RegFile   │    │
+│  │   (4KB)   (32R)  +DIV     (4KB)   Write     │    │
+│  │   BTB                          AX14-Lite     │    │
+│  │   (64e)                                      │    │
+│  └─────────────────────────────────────────────┘    │
+│          AXI4-Lite Bus (32-bit)                      │
+│  ┌──────────┬──────────┬──────────┬──────────┐     │
+│  │  IMEM    │  DMEM    │  MMIO    │ CLINT    │     │
+│  │0x00000000│0x10000000│0x20000000│0x02000000│     │
+│  └──────────┴──────────┴──────────┴──────────┘     │
+└─────────────────────────────────────────────────────┘
+</div>
+
+<h2>2. Memory Map</h2>
+<table>
+  <tr><th>Region</th><th>Start</th><th>Size</th><th>Description</th></tr>
+  <tr><td><strong>IMEM</strong></td><td><code>0x0000_0000</code></td><td>4 KB</td><td>Instruction memory (ICache-backed)</td></tr>
+  <tr><td><strong>DMEM</strong></td><td><code>0x1000_0000</code></td><td>64 KB</td><td>Data memory (DCache-backed, write-back)</td></tr>
+  <tr><td><strong>CLINT</strong></td><td><code>0x0200_0000</code></td><td>64 KB</td><td>Core-local interrupt controller</td></tr>
+  <tr><td><strong>PLIC</strong></td><td><code>0x0C00_0000</code></td><td>64 MB</td><td>Platform-level interrupt controller</td></tr>
+  <tr><td><strong>MMIO</strong></td><td><code>0x2000_0000</code></td><td>256 MB</td><td>GPIO, UART, Timer, SPI</td></tr>
+  <tr><td><strong>STACK</strong></td><td><code>0x1000_F000</code></td><td>4 KB</td><td>Grows downward</td></tr>
+</table>
+
+<h2>3. Pipeline Hazard Model (Critical for SW Performance)</h2>
+<table>
+  <tr><th>Hazard</th><th>Example</th><th>Penalty</th><th>Software Mitigation</th></tr>
+  <tr><td><strong>Load-use stall</strong></td><td><code>lw t0,0(a0); add t1,t0,t2</code></td><td>1 cycle</td><td>Schedule independent instruction between load and use</td></tr>
+  <tr><td><strong>Branch mispredict</strong></td><td>BTB miss / wrong direction</td><td>2 cycles</td><td>Align branch targets to 16B (I$ line); use likely direction</td></tr>
+  <tr><td><strong>MUL stall</strong></td><td><code>mul t0,t1,t2</code></td><td>3 cycles</td><td>Schedule independent work after MUL; use shifts for ×2/×4</td></tr>
+  <tr><td><strong>DIV stall</strong></td><td><code>div t0,t1,t2</code></td><td>31 cycles</td><td>Avoid division in hot paths; use reciprocal multiply</td></tr>
+  <tr><td><strong>I$ miss</strong></td><td>Sequential / jump</td><td>4-8 cycles</td><td>Keep hot loops &lt; 4KB; align functions to 16B; use C extension</td></tr>
+  <tr><td><strong>D$ miss</strong></td><td>Write-back / read miss</td><td>4-8 cycles</td><td>Pack structs; prefetch; avoid random access patterns</td></tr>
+</table>
+
+<h2>4. Forwarding Paths (Exploit These!)</h2>
+<div class="card">
+  <table>
+    <tr><th>Path</th><th>Latency</th><th>Optimal Code Pattern</th></tr>
+    <tr><td>EX → EX</td><td>0 cycles (fwd)</td><td><code>add t0,t1,t2; sub t3,t0,t4</code> — back-to-back OK</td></tr>
+    <tr><td>MEM → EX</td><td>0 cycles (fwd)</td><td><code>lw t0,0(a0); nop; add t1,t0,t2</code> — need 1 NOP gap</td></tr>
+    <tr><td>WB → EX</td><td>Never needed</td><td>Forwarding captures value earlier in pipeline</td></tr>
+  </table>
+  <p style="margin-top:.5rem"><strong>Rule:</strong> Separate load and ALU-use by at least 1 instruction. ALU→ALU chains have zero stall cost due to forwarding.</p>
+</div>
+
+<h2>5. Compiler Tuning (sw/tuning.mk)</h2>
+<table>
+  <tr><th>Flag</th><th>Effect on lunahan_v1</th></tr>
+  <tr><td><code>-march=rv32imc</code></td><td>RV32I base + Multiply + Compressed. C extension reduces I$ pressure by ~30%</td></tr>
+  <tr><td><code>-mabi=ilp32</code></td><td>32-bit int/long/pointer. Matches 32-bit register width exactly</td></tr>
+  <tr><td><code>-O2</code></td><td>Balanced optimization. -O3 unrolls too much, overflows 4KB I$</td></tr>
+  <tr><td><code>-fno-tree-vectorize</code></td><td>No SIMD — RV32IMC has no vector unit</td></tr>
+  <tr><td><code>-falign-functions=16</code></td><td>Aligns functions to 16B cache line boundaries — avoids I$ line splits on jumps</td></tr>
+  <tr><td><code>-falign-loops=16</code></td><td>Aligns loop headers to cache line boundary — hot loops stay in one I$ line</td></tr>
+  <tr><td><code>-falign-jumps=16</code></td><td>Aligns jump targets — critical for BTB prediction accuracy</td></tr>
+</table>
+
+<h2>6. Software Deliverables (sw/)</h2>
+<table>
+  <tr><th>File</th><th>Lines</th><th>Purpose</th></tr>
+  <tr><td><code>sw_hw_interface.md</code></td><td>326</td><td>Complete HW/SW specification — memory map, CSRs, AXI, hazards</td></tr>
+  <tr><td><code>link.ld</code></td><td>132</td><td>GCC linker script — IMEM/DMEM/CLINT/PLIC/MMIO regions</td></tr>
+  <tr><td><code>crt0.s</code></td><td>267</td><td>Startup code — BSS clear, .data copy, trap entry, C-extension optimized</td></tr>
+  <tr><td><code>optimized_lib.c</code></td><td>393</td><td>memcpy/memset/strlen/strcmp — hand-scheduled for 5-stage pipeline</td></tr>
+  <tr><td><code>tuning.mk</code></td><td>203</td><td>GCC optimization flags with per-flag rationale for this core</td></tr>
+  <tr><td><code>perf_tuning_guide.md</code></td><td>438</td><td>Performance tuning — scheduling rules, cache patterns, C→RISC-V mapping</td></tr>
+</table>
+
+<h2>7. Quick Start: Building Software</h2>
+<pre><code><span style="color:var(--muted)"># Compile with optimized flags</span>
+riscv64-unknown-elf-gcc -march=rv32imc -mabi=ilp32 -O2 \
+  -T sw/link.ld -nostdlib -nostartfiles \
+  sw/crt0.s app.c sw/optimized_lib.c \
+  -o app.elf
+
+<span style="color:var(--muted)"># Generate hex for simulator loading</span>
+riscv64-unknown-elf-objcopy -O verilog app.elf app.hex
+
+<span style="color:var(--muted)"># Profile with lunahan_v1 golden model</span>
+python3 perf/profile_cpu.py</code></pre>
+
+<div class="footer">lunahan_v1 · RV32IMC · sky130 @ 100 MHz · 5-stage pipeline · <code>sw/</code> directory</div>
+</div>
+</body>
+</html>
