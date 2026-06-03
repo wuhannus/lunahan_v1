@@ -3,7 +3,7 @@
   Target: sky130_fd_sc_hd @ 100 MHz (10 ns period)
 ======================================================================
 
-Report generated: 2026-05-27 16:32:39
+Report generated: 2026-05-28 17:31:03
 Technology:       SkyWater 130nm (sky130_fd_sc_hd)
 Process corner:   TT (typical-typical), 1.80V, 25°C
 Clock frequency:  100 MHz (period = 10.000 ns)

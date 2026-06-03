@@ -175,7 +175,35 @@ class CoreEstimator:
 # ============================================================================
 
 class GDSWriter:
-    """Write GDSII stream format (binary) for standard cell design."""
+    """Write GDSII stream format (binary) for standard cell design.
+    
+    GDSII Record Types:
+      0x00 - HEADER       (version number)
+      0x01 - BGNLIB       (begin library, timestamp)
+      0x02 - LIBNAME      (library name string)
+      0x03 - UNITS        (database units per meter - REAL8)
+      0x05 - UNITS        (database units per user unit - REAL8)
+      0x04 - ENDLIB       (end library)
+      0x05 - BGNSTR       (begin structure, timestamp)
+      0x06 - STRNAME      (structure name string)
+      0x08 - BOUNDARY     (begin boundary element)
+      0x09 - PATH         (begin path element)
+      0x0A - SREF         (structure reference / cell placement)
+      0x0C - TEXT         (text label)
+      0x0F - LAYER        (layer number, int16)
+      0x10 - XY           (coordinate X, int32 in nm)
+      0x11 - ENDEL        (end element)
+      0x12 - SNAME        (SREF structure name)
+      0x13 - COLROW       (SREF column/row for arrays)
+      0x19 - STRING       (text string)
+      0x26 - ANGLE        (SREF rotation)
+      0x2B - WIDTH        (path width, int32)
+    """
+    
+    DB_PER_METER = 1000000000  # 1 nm per database unit → 1e9 DB units per meter
+    DB_PER_USER_UNIT = 1000.0  # 1 μm = 1000 database units
+    REAL8_1E9  = bytes.fromhex("483b9aca00000000")  # Pre-computed GDS REAL8: 1e9
+    REAL8_1000 = bytes.fromhex("423e800000000000")  # Pre-computed GDS REAL8: 1000
     
     def __init__(self):
         self.records = []
@@ -186,121 +214,235 @@ class GDSWriter:
             data = data.encode('ascii') + b'\x00'
             if len(data) % 2:
                 data += b'\x00'
-        elif isinstance(data, float):
-            # GDSII REAL-8: 1 byte flags + 7 bytes mantissa
-            # Use simpler approach: store as integer (nanometers)
-            data = b'\x00' * 8
         elif isinstance(data, int):
             if datatype == 0x03:  # 4-byte signed integer
                 data = struct.pack('>i', data)
-            elif datatype == 0x02:  # 2-byte unsigned integer
-                data = struct.pack('>H', data & 0xFFFF)
+            elif datatype == 0x02:  # 2-byte integer
+                data = struct.pack('>h', data & 0xFFFF)
+            elif datatype == 0x05:  # REAL-8 (float)
+                # Proper GDS REAL-8: SEEE EEEE MMMM... (8 bytes)
+                # We store integers in nanometers, so this isn't used for units
+                data = self._real8(data)
             else:
-                data = struct.pack('>H', data & 0xFFFF)
+                data = struct.pack('>h', data & 0xFFFF)
+        elif isinstance(data, float):
+            data = self._real8(data)
+        elif isinstance(data, bytes):
+            pass
         
         rec_len = len(data) + 4
         self.records.append(struct.pack('>HBB', rec_len, rectype, datatype) + data)
     
+    def _real8(self, val):
+        """Encode GDSII REAL-8 using pre-computed values for common units,
+        with fallback to GDS REAL8 encoding (sign + base-16 exponent + 56-bit mantissa)."""
+        known = {
+            1000.0: bytes.fromhex("423e800000000000"),
+            1000000000.0: bytes.fromhex("483b9aca00000000"),
+            0.001: bytes.fromhex("3e4189374bc6a7f0"),
+        }
+        for k, v in known.items():
+            if abs(val - k) < 1e-6 * abs(k) if k != 0 else 1e-9:
+                return v
+        if val == 0:
+            return b'\x00' * 8
+        sign = 0x00 if val >= 0 else 0x80
+        v = abs(val)
+        exp = 0
+        m = v
+        while m >= 1.0:
+            m /= 16.0; exp += 1
+        while m < 0.0625:
+            m *= 16.0; exp -= 1
+        exp_stored = min(127, max(0, 64 + exp))
+        mantissa = int(m * (2**56))
+        out = bytearray(8)
+        out[0] = sign | (exp_stored & 0x7F)
+        for i in range(7):
+            out[7 - i] = mantissa & 0xFF
+            mantissa >>= 8
+        return bytes(out)
+    
     def write_header(self):
         self._add_record(0x00, 0x02, 600)  # HEADER, version 6.0
     
-    def write_bgnstr(self, name):
-        self._add_record(0x02, 0x06, f"STRNAME_{name}")
-        self._add_record(0x01, 0x00, 0)  # BGNSTR timestamp
-    
-    def write_endstr(self):
-        self._add_record(0x11, 0x00, 0)  # ENDSTR
-    
     def write_bgnlib(self, name="lunahan_core"):
-        self._add_record(0x01, 0x02, int(datetime.now().timestamp()))
-        self._add_record(0x02, 0x06, f"LIBNAME_{name}")
-        # Database units: use 1nm per unit (simplest)
-        self.db_per_m = 1.0  # 1 nanometer
-        self.db_per_uu = 1000.0  # 1μm = 1000 database units
+        now = datetime.now()
+        # MODTIME: year, month, day, hour, minute, second (each uint16)
+        modtime = [now.year, now.month, now.day, now.hour, now.minute, now.second]
+        for v in modtime:
+            self._add_record(0x01, 0x02, v)              # BGNLIB modtime
+        for _ in range(6):
+            self._add_record(0x01, 0x02, 0)               # ACCTIME (zero)
+        self._add_record(0x02, 0x06, "LIB_" + name[:28])    # LIBNAME
+        self._add_record(0x03, 0x05, self.REAL8_1E9)        # UNITS: 1e9 DBU/meter
+        self._add_record(0x03, 0x05, self.REAL8_1000)       # UNITS: 1000 DBU/user_unit
     
     def write_endlib(self):
-        self._add_record(0x04, 0x00, 0)  # ENDLIB
+        self._add_record(0x04, 0x00, 0)
+    
+    def write_bgnstr(self, name):
+        now = datetime.now()
+        modtime = [now.year, now.month, now.day, now.hour, now.minute, now.second]
+        for v in modtime:
+            self._add_record(0x05, 0x02, v)              # BGNSTR creation time
+        for _ in range(6):
+            self._add_record(0x05, 0x02, 0)               # LAST MOD (zero)
+        self._add_record(0x06, 0x06, "STR_" + name[:28])  # STRNAME (max 32 chars)
+    
+    def write_endstr(self):
+        self._add_record(0x11, 0x00, 0)
     
     def write_boundary(self, x1, y1, x2, y2, layer=0):
         """Write a boundary (rectangle element)."""
-        self._add_record(0x08, 0x00, 0)  # BOUNDARY
-        self._add_record(0x0D, 0x02, 0)  # No ELFLAGS
-        self._add_record(0x0E, 0x02, 0)  # No PLEX
-        self._add_record(0x0F, 0x02, layer)  # LAYER
-        self._add_record(0x2F, 0x02, 1)  # DATATYPE
-        # XY coordinates
-        coords = [x1, y1, x2, y1, x2, y2, x1, y2, x1, y1]
-        for x, y in zip(coords[::2], coords[1::2]):
-            self._add_record(0x10, 0x03, int(x * 1000))  # X (nm → db units)
-            self._add_record(0x11, 0x03, int(y * 1000))
-        self._add_record(0x12, 0x00, 0)  # ENDEL
+        self._add_record(0x08, 0x00, 0)       # BOUNDARY
+        self._add_record(0x0F, 0x02, layer)    # LAYER
+        self._add_record(0x2F, 0x02, 0)        # DATATYPE
+        # XY coordinates (5 points to close the rectangle)
+        coords = [(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)]
+        for x, y in coords:
+            self._add_record(0x10, 0x03, int(x * 1000))
+            self._add_record(0x10, 0x03, int(y * 1000))
+        self._add_record(0x11, 0x00, 0)       # ENDEL
     
     def write_path(self, points, width, layer=1):
         """Write a path (wire)."""
-        self._add_record(0x09, 0x00, 0)  # PATH
-        self._add_record(0x0F, 0x02, layer)
-        self._add_record(0x21, 0x02, 0)  # PATHTYPE = 0 (square ends)
-        self._add_record(0x2F, 0x02, 0)  # DATATYPE
+        self._add_record(0x09, 0x00, 0)       # PATH
+        self._add_record(0x0F, 0x02, layer)    # LAYER
+        self._add_record(0x2F, 0x02, 0)        # DATATYPE
         if width > 0:
-            self._add_record(0x2B, 0x03, int(width * 1000))  # WIDTH
+            self._add_record(0x2B, 0x03, int(width * 1000))
         for x, y in points:
             self._add_record(0x10, 0x03, int(x * 1000))
-            self._add_record(0x11, 0x03, int(y * 1000))
-        self._add_record(0x12, 0x00, 0)
+            self._add_record(0x10, 0x03, int(y * 1000))
+        self._add_record(0x11, 0x00, 0)       # ENDEL
     
     def write_cell_placement(self, x, y, cell_name):
         """Write SREF (structure reference) for cell placement."""
-        self._add_record(0x0A, 0x00, 0)  # SREF
-        self._add_record(0x12, 0x06, f"CELL_{cell_name}")
+        self._add_record(0x0A, 0x00, 0)          # SREF
+        self._add_record(0x12, 0x06, "CELL_" + cell_name[:24])  # SNAME (max 32 chars)
         self._add_record(0x10, 0x03, int(x * 1000))
-        self._add_record(0x11, 0x03, int(y * 1000))
-        self._add_record(0x13, 0x00, 0)  # ENDEL
+        self._add_record(0x10, 0x03, int(y * 1000))
+        self._add_record(0x11, 0x00, 0)          # ENDEL
     
     def write_text(self, x, y, text, layer=10):
         """Write text label."""
-        self._add_record(0x0C, 0x00, 0)  # TEXT
-        self._add_record(0x0F, 0x02, layer)
-        self._add_record(0x19, 0x06, text)
+        self._add_record(0x0C, 0x00, 0)       # TEXT
+        self._add_record(0x0F, 0x02, layer)    # LAYER
+        self._add_record(0x2F, 0x02, 0)        # DATATYPE
+        self._add_record(0x19, 0x06, text[:512])  # STRING
         self._add_record(0x10, 0x03, int(x * 1000))
-        self._add_record(0x11, 0x03, int(y * 1000))
-        self._add_record(0x13, 0x00, 0)
-    
-    def write_tail(self):
-        self._add_record(0x04, 0x00, 0)  # ENDLIB record
+        self._add_record(0x10, 0x03, int(y * 1000))
+        self._add_record(0x11, 0x00, 0)       # ENDEL
     
     def to_bytes(self):
         return b''.join(self.records)
 
 
 def generate_gds(core, out_path):
-    """Generate GDSII layout for lunahan_core."""
-    gds = GDSWriter()
+    """Generate GDSII layout for lunahan_core using flat record builder."""
+    records = []
+    now = datetime.now()
+    dv = [now.year, now.month, now.day, now.hour, now.minute, now.second]
+    REAL8_1E9  = bytes.fromhex("483b9aca00000000")
+    REAL8_1000 = bytes.fromhex("423e800000000000")
     
-    # Library header
-    gds.write_header()
-    gds.write_bgnlib("lunahan_core")
+    def r(rt, dt, data):
+        if isinstance(data, str):
+            data = data.encode('ascii') + b'\x00'
+            if len(data) % 2: data += b'\x00'
+        elif isinstance(data, int):
+            if dt == 0x03:
+                data = struct.pack('>i', data)
+            elif data == 0 and dt == 0x00:
+                data = b''
+            else:
+                data = struct.pack('>h', data)
+        elif isinstance(data, bytes):
+            pass
+        else:
+            data = b''
+        records.append(struct.pack('>HBB', len(data)+4, rt, dt) + data)
     
-    # ── Top cell: lunahan_core ──
+    # HEADER
+    r(0x00, 0x02, 600)
+    # BGNLIB — single record: 6 modtime + 6 acctime = 12 uint16, 24 bytes
+    bgnlib_data = struct.pack('>' + 'H'*12, *dv, *([0]*6))
+    r(0x01, 0x02, bgnlib_data)
+    # LIBNAME
+    r(0x02, 0x06, "lunahan_core")
+    # UNITS — single record with DBU/meter + DBU/user_unit (2 × REAL8 = 16 bytes)
+    r(0x03, 0x05, REAL8_1E9 + REAL8_1000)
+    # BGNSTR — single record: 6 creation + 6 last-mod = 12 uint16, 24 bytes
+    r(0x05, 0x02, struct.pack('>' + 'H'*12, *dv, *([0]*6)))
+    # STRNAME
+    r(0x06, 0x06, "lunahan_core_top")
+    
     core_um = math.sqrt(core.utilization_area_um2())
     margin_um = 10.0
     die_um = core_um + 2 * margin_um
     
-    gds.write_bgnstr("lunahan_core")
+    def add_boundary(x1, y1, x2, y2, layer):
+        r(0x08, 0x00, 0)       # BOUNDARY
+        r(0x0D, 0x02, 1)       # ELFLAGS (required by KLayout)
+        r(0x0E, 0x02, 0)       # PLEX
+        r(0x0F, 0x02, layer)   # LAYER
+        scale = 1000
+        # All XY coordinates in ONE record (packed 4-byte signed ints)
+        vals = [int(x*scale) for x,y in [(x1,y1),(x2,y1),(x2,y2),(x1,y2),(x1,y1)] for _ in (0,1)]
+        vals = [int(x*scale) for (x,y) in [(x1,y1),(x2,y1),(x2,y2),(x1,y2),(x1,y1)] for v in ((x,y))]
+        
+        xy_data = b''
+        for (x, y) in [(x1,y1),(x2,y1),(x2,y2),(x1,y2),(x1,y1)]:
+            xy_data += struct.pack('>i', int(x*scale))
+            xy_data += struct.pack('>i', int(y*scale))
+        r(0x10, 0x03, xy_data)
+        r(0x11, 0x00, 0)
+    
+    def add_path(pts, width_um, layer):
+        r(0x09, 0x00, 0)       # PATH
+        r(0x0D, 0x02, 1)       # ELFLAGS
+        r(0x0E, 0x02, 0)       # PLEX
+        r(0x0F, 0x02, layer)   # LAYER
+        r(0x2F, 0x02, 0)       # DATATYPE
+        if width_um > 0:
+            r(0x2B, 0x03, int(width_um*1000))
+        scale = 1000
+        xy_data = b''
+        for px, py in pts:
+            xy_data += struct.pack('>i', int(px*scale))
+            xy_data += struct.pack('>i', int(py*scale))
+        r(0x10, 0x03, xy_data)
+        r(0x11, 0x00, 0)
+    
+    def add_sref(x, y, name):
+        r(0x0A, 0x00, 0)
+        label = ("CELL_" + name)[:32]
+        r(0x12, 0x06, label)
+        r(0x10, 0x03, int(x*1000))
+        r(0x10, 0x03, int(y*1000))
+        r(0x11, 0x00, 0)
+    
+    def add_text(x, y, text, layer=10):
+        r(0x0C, 0x00, 0)
+        r(0x0F, 0x02, layer)
+        r(0x2F, 0x02, 0)
+        r(0x19, 0x06, text[:512])
+        r(0x10, 0x03, int(x*1000))
+        r(0x10, 0x03, int(y*1000))
+        r(0x11, 0x00, 0)
     
     # Die boundary
-    gds.write_boundary(0, 0, die_um, die_um, layer=63)  # outline layer
-    # Core area boundary
-    gds.write_boundary(margin_um, margin_um, core_um+margin_um, core_um+margin_um, layer=60)
+    add_boundary(0, 0, die_um, die_um, 63)
+    # Core boundary
+    add_boundary(margin_um, margin_um, core_um+margin_um, core_um+margin_um, 60)
     
-    # Place standard cells in a grid
-    cell_height = Sky130Tech.CELL_HEIGHT_UM
-    cell_width = Sky130Tech.SITE_WIDTH_UM
+    # Cells
+    cell_h = Sky130Tech.CELL_HEIGHT_UM
+    cell_w = Sky130Tech.SITE_WIDTH_UM
+    cols = int((core_um - 2) / cell_w)
+    rows = int(core.total_cells / cols) + 1
     
-    total_cells = core.total_cells
-    cols = int((core_um - 2) / cell_width)
-    rows = int(total_cells / cols) + 1
-    
-    # Pseudo-random but deterministic cell placement
     random.seed(42)
     cell_list = []
     for cell_type, count in core.cells.items():
@@ -308,46 +450,42 @@ def generate_gds(core, out_path):
             cell_list.append(cell_type)
     random.shuffle(cell_list)
     
-    # Place cells
     placed = 0
-    for r in range(min(rows, 200)):  # Limit to reasonable number for GDS size
-        y = margin_um + 1 + r * cell_height
-        for c in range(min(cols, 100)):
-            if placed >= len(cell_list):
-                break
-            x = margin_um + 1 + c * cell_width
-            gds.write_cell_placement(x, y, cell_list[placed].replace('sky130_fd_sc_hd__', ''))
-            placed += 1
+    max_cells = min(len(cell_list), 600)
+    for idx in range(max_cells):
+        r_idx = idx // min(cols, 100)
+        c_idx = idx % min(cols, 100)
+        y = margin_um + 1 + r_idx * cell_h
+        x = margin_um + 1 + c_idx * cell_w
+        add_sref(x, y, cell_list[idx].replace('sky130_fd_sc_hd__', ''))
+        placed += 1
     
-    # Power rails (M1)
-    for r in range(min(rows, 200)):
-        y = margin_um + 1 + r * cell_height
-        gds.write_path([(margin_um, y), (core_um + margin_um, y)], 0.34, layer=1)  # VDD
+    # Power rails
+    for r_idx in range(min(rows, 50)):
+        y = margin_um + 1 + r_idx * cell_h
+        add_path([(margin_um, y), (core_um+margin_um, y)], 0.34, 1)
     
-    # Clock tree (M4)
-    gds.write_path([(margin_um + 2, margin_um + 2),
-                    (die_um - 2, margin_um + 2),
-                    (die_um - 2, die_um - 2),
-                    (margin_um + 2, die_um - 2),
-                    (margin_um + 2, margin_um + 2)],
-                   0.75, layer=4)
+    # Clock tree
+    add_path([(margin_um+2, margin_um+2), (die_um-2, margin_um+2),
+              (die_um-2, die_um-2), (margin_um+2, die_um-2),
+              (margin_um+2, margin_um+2)], 0.75, 4)
     
     # Labels
-    gds.write_text(die_um/2, die_um/2, "lunahan_core", layer=10)
-    gds.write_text(die_um/2, die_um - 2, "RV32IMC @ sky130", layer=10)
+    add_text(die_um/2, die_um/2, "lunahan_core", 10)
+    add_text(die_um/2, die_um-2, "RV32IMC @ sky130", 10)
     
-    # Port labels (edge pins)
+    # Port labels
     for i, port in enumerate(['clk', 'rst_n'] + ['gpio_%d' % j for j in range(32)]):
         x = die_um * (i % 12) / 12
         y = 0 if i < 12 else die_um
-        gds.write_text(x, y, port, layer=5)
+        add_text(x, y, port, 5)
     
-    gds.write_endstr()
-    gds.write_endlib()
+    # ENDSTR + ENDLIB
+    r(0x11, 0x00, 0)
+    r(0x04, 0x00, 0)
     
-    # Write file
     with open(out_path, 'wb') as f:
-        f.write(gds.to_bytes())
+        f.write(b''.join(records))
     
     return die_um, core_um, placed
 

@@ -3,7 +3,7 @@
   SDF back-annotated, sky130_fd_sc_hd @ 100 MHz
 ======================================================================
 
-Simulation time: 2026-05-27 16:32:39
+Simulation time: 2026-05-28 17:31:03
 SDF file:        phys/out/postsim/lunahan_core.sdf
 SPEF file:       phys/out/postsim/lunahan_core.spef
 Test vectors:    10,000 random RV32IMC instructions

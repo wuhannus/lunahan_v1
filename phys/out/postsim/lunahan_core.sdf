@@ -1,7 +1,7 @@
 (DELAYFILE
 (SDFVERSION "IEEE 1497-2020")
 (DESIGN "lunahan_core")
-(DATE "Wed May 27 16:32:39 2026")
+(DATE "Thu May 28 17:31:03 2026")
 (VENDOR "lunahan_v1")
 (PROGRAM "pycircuit-physical")
 (VERSION "1.0.0")

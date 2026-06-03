@@ -12,7 +12,7 @@
   "cell_area_um2": 30559.05,
   "die_um": 236.8,
   "ppa_status": "ALL TARGETS MET",
-  "generated": "2026-05-27T16:32:39.371493",
+  "generated": "2026-05-28T17:31:03.666313",
   "files": {
     "gds": "phys/out/signoff/lunahan_core.gds",
     "spef": "phys/out/postsim/lunahan_core.spef",
