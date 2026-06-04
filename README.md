@@ -1,5 +1,13 @@
 # lunahan_v1 — A RISC-V RV32IMC Core in pyCircuit
 
+> **⚠️ Project Status Notice**
+>
+> This project is generated under the guidance of **Dr. Han Wu** (wuhannus),
+> co-working with his AI collaborator **DeepSeek V4 Pro**. The design and
+> physical flow results presented here have **not been silicon-proven**.
+> The current stage is for **flow demonstration and methodology validation**
+> purposes only. Dr. Wu and his AI friend are actively continuing this work.
+
 **lunahan_v1** is an open-source, synthesizable RISC-V core implementing the
 **RV32IMC** instruction set. It combines the silicon-proven microarchitecture
 methodology of **XiangShan** with the Python-native agile design flow of
