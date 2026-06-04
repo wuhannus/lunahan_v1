@@ -24,7 +24,7 @@ adopts the same principles:
   through the OpenROAD flow — no proprietary tools required.
 
 ### pyCircuit Agility
-[pyCircuit](https://github.com/pycircuit) treats Python as a first-class HDL:
+[pyCircuit](https://github.com/hengliao1972/pyCircuit) treats Python as a first-class HDL:
 
 - **Python → MLIR → Verilog**: Hardware described in Python is lowered through
   MLIR dialects (`pyc` / `comb` / `seq`) to synthesizable Verilog RTL.
@@ -198,7 +198,7 @@ public release).
 
 - [XiangShan](https://github.com/OpenXiangShan/XiangShan) — Open-source
   high-performance RISC-V processor
-- [pyCircuit](https://github.com/pycircuit) — Python-native agile hardware
+- [pyCircuit](https://github.com/hengliao1972/pyCircuit) — Python-native agile hardware
   design
 - [RISCOF](https://github.com/riscv-software-src/riscof) — RISC-V
   compliance framework
