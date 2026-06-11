@@ -1,0 +1,161 @@
+{
+  "design": "lunahan_core",
+  "technology": "sky130_fd_sc_hd",
+  "frequency_mhz": 100.0,
+  "vdd": 1.8,
+  "temperature_c": 25,
+  "total_power_mw": 0.7391,
+  "power_breakdown": {
+    "clock_tree": {
+      "leakage_uw": 0.03,
+      "dynamic_uw": 60.0,
+      "total_uw": 60.03,
+      "share_pct": 8.1
+    },
+    "registers": {
+      "leakage_uw": 2.2032,
+      "dynamic_uw": 459.0,
+      "total_uw": 461.2032,
+      "share_pct": 62.4
+    },
+    "combinational": {
+      "leakage_uw": 1.227,
+      "dynamic_uw": 216.66,
+      "total_uw": 217.887,
+      "share_pct": 29.5
+    }
+  },
+  "area_breakdown": {
+    "clock_tree_um2": 386.55,
+    "registers_um2": 18923.04,
+    "combinational_um2": 11249.46,
+    "total_um2": 30559.05
+  },
+  "switching_activity": {
+    "clock_tree": 1.0,
+    "registers": 0.15,
+    "combinational": 0.12
+  },
+  "per_cell_details": [
+    {
+      "cell": "dff_1",
+      "count": 1224,
+      "category": "register",
+      "leakage_nw": 2203.2000000000003,
+      "dynamic_uw": 459.0,
+      "total_uw": 461.2032,
+      "area_um2": 18923.04,
+      "activity": 0.15
+    },
+    {
+      "cell": "mux2_1",
+      "count": 350,
+      "category": "comb",
+      "leakage_nw": 385.00000000000006,
+      "dynamic_uw": 75.6,
+      "total_uw": 75.985,
+      "area_um2": 3605.0000000000005,
+      "activity": 0.12
+    },
+    {
+      "cell": "clkbuf_16",
+      "count": 15,
+      "category": "clock",
+      "leakage_nw": 30.0,
+      "dynamic_uw": 60.0,
+      "total_uw": 60.03,
+      "area_um2": 386.55,
+      "activity": 1.0
+    },
+    {
+      "cell": "and2_1",
+      "count": 180,
+      "category": "comb",
+      "leakage_nw": 153.0,
+      "dynamic_uw": 25.919999999999998,
+      "total_uw": 26.072999999999997,
+      "area_um2": 1391.4,
+      "activity": 0.12
+    },
+    {
+      "cell": "or2_1",
+      "count": 150,
+      "category": "comb",
+      "leakage_nw": 135.0,
+      "dynamic_uw": 23.4,
+      "total_uw": 23.535,
+      "area_um2": 1159.5,
+      "activity": 0.12
+    },
+    {
+      "cell": "nand2_1",
+      "count": 200,
+      "category": "comb",
+      "leakage_nw": 130.0,
+      "dynamic_uw": 19.2,
+      "total_uw": 19.33,
+      "area_um2": 1030.0,
+      "activity": 0.12
+    },
+    {
+      "cell": "inv_1",
+      "count": 250,
+      "category": "comb",
+      "leakage_nw": 112.5,
+      "dynamic_uw": 18.0,
+      "total_uw": 18.1125,
+      "area_um2": 1287.5,
+      "activity": 0.12
+    },
+    {
+      "cell": "xor2_1",
+      "count": 80,
+      "category": "comb",
+      "leakage_nw": 96.0,
+      "dynamic_uw": 17.28,
+      "total_uw": 17.376,
+      "area_um2": 824.0,
+      "activity": 0.12
+    },
+    {
+      "cell": "fa_1",
+      "count": 32,
+      "category": "comb",
+      "leakage_nw": 80.0,
+      "dynamic_uw": 13.440000000000001,
+      "total_uw": 13.520000000000001,
+      "area_um2": 741.76,
+      "activity": 0.12
+    },
+    {
+      "cell": "buf_1",
+      "count": 120,
+      "category": "comb",
+      "leakage_nw": 60.0,
+      "dynamic_uw": 11.52,
+      "total_uw": 11.58,
+      "area_um2": 618.0,
+      "activity": 0.12
+    },
+    {
+      "cell": "nor2_1",
+      "count": 100,
+      "category": "comb",
+      "leakage_nw": 68.0,
+      "dynamic_uw": 10.799999999999997,
+      "total_uw": 10.867999999999997,
+      "area_um2": 515.0,
+      "activity": 0.12
+    },
+    {
+      "cell": "ha_1",
+      "count": 5,
+      "category": "comb",
+      "leakage_nw": 7.5,
+      "dynamic_uw": 1.5,
+      "total_uw": 1.5075,
+      "area_um2": 77.30000000000001,
+      "activity": 0.12
+    }
+  ]
+}
