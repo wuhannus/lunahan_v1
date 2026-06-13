@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Agentic AI CPU Architecture — Vision &amp; Open-Source Roadmap</title>
+<style>
+  :root { --bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;
+    --accent:#58a6ff;--green:#3fb950;--yellow:#d2991d;--red:#f85149;--purple:#a371f7;--orange:#f0883e }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;line-height:1.6;padding:2rem}
+  .container{max-width:1000px;margin:0 auto}
+  h1{font-size:1.8rem;margin-bottom:.25rem}
+  h2{font-size:1.3rem;margin:2rem 0 1rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+  h3{font-size:1.05rem;margin:1.2rem 0 .5rem}
+  .subtitle{color:var(--muted);margin-bottom:2rem}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1rem 0}
+  .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.75rem;font-weight:600}
+  .b-now{background:#3a1a1a;color:var(--red)}.b-next{background:#3a2e0a;color:var(--yellow)}.b-future{background:#0a1f3a;color:var(--accent)}.b-done{background:#1a3a1a;color:var(--green)}
+  table{width:100%;border-collapse:collapse;margin:1rem 0}
+  th,td{padding:.6rem .8rem;border-bottom:1px solid var(--border);vertical-align:top;font-size:.88rem}
+  th{color:var(--muted);font-weight:600;font-size:.82rem;white-space:nowrap}
+  .hl{border-left:3px solid var(--green);padding:.5rem 1rem;margin:.75rem 0;border-radius:0 6px 6px 0;background:#1a2a1a;font-size:.9rem}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+  .kpi{text-align:center;padding:1rem;background:var(--card);border-radius:8px;border:1px solid var(--border)}
+  .kpi .val{font-size:2rem;font-weight:700;color:var(--accent)}
+  .kpi .lbl{color:var(--muted);font-size:.82rem;margin-top:.25rem}
+  pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:1rem;overflow-x:auto;font-size:.82rem;line-height:1.8}
+  code{font-family:"SF Mono",Monaco,Consolas,monospace;font-size:.82rem}
+  .footer{color:var(--muted);font-size:.8rem;margin-top:3rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Agentic AI CPU Architecture — Vision &amp; Open-Source Roadmap</h1>
+<p class="subtitle">Thoughts on the next-generation CPU architecture for the agentic AI era<br>Dr. Han Wu · DeepSeek V4 Pro · May 2025</p>
+
+<!-- ============================================================ -->
+<h2>1. The Agentic AI Shift — Why Architecture Must Change</h2>
+
+<div class="card">
+  <p>Agentic AI — autonomous agents that perceive, reason, plan, use tools, and act in loops — imposes fundamentally different demands on hardware than traditional inference or training workloads:</p>
+
+  <div class="grid">
+    <div>
+      <h4>Traditional AI Inference</h4>
+      <ul>
+        <li>Single model, batched inputs</li>
+        <li>Predictable compute pattern</li>
+        <li>GPU/NPU as offload accelerator</li>
+        <li>CPU = control plane only</li>
+        <li>Latency measured in seconds</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Agentic AI Workload</h4>
+      <ul>
+        <li>Multi-model chaining (LLM + tool-use + vision + planner)</li>
+        <li>Unpredictable branching (tool calls, retries, reflection)</li>
+        <li>CPU + NPU <strong>tightly coupled</strong>, not offloaded</li>
+        <li>CPU = active reasoning loop participant</li>
+        <li>Latency measured in <strong>milliseconds</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hl">
+    <strong>Core insight:</strong> Agentic AI turns the CPU from a passive orchestrator into an active co-compute participant. The architecture must support <em>continuous context switching</em>, <em>sparse attention</em>, <em>real-time tool invocation</em>, and <em>multi-agent safety boundaries</em> — none of which are well-served by today's CPU designs.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Six Architectural Imperatives for Agentic AI</h2>
+
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:25%">Imperative</th><th>What It Means</th><th style="width:25%">Architecture Response</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>Tight CPU-NPU Coupling</strong></td>
+      <td>Agent loops: LLM inference ↔ tool execution ↔ reasoning ↔ action. GPU offload (PCIe) adds 50-100μs latency per switch. Unacceptable at millisecond scale.</td>
+      <td>Shared memory between CPU and NPU. CPU issues NPU commands via <strong>custom RISC-V instructions</strong> (not MMIO). NPU appears as a co-processor, not a PCIe device.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Context Persistence</strong></td>
+      <td>Agents maintain long-running contexts (KV-caches, tool state, memory). Context switching between agents must be <strong>sub-microsecond</strong>.</td>
+      <td><strong>Context-aware register file</strong>: dedicated register banks per agent context. Hardware context IDs. Atomic context-switch instruction (single-cycle).</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Sparse Compute</strong></td>
+      <td>Attention mechanisms are 90%+ sparse. Dense matrix multiply wastes 10× energy on zeros. MoE (Mixture of Experts) activates only 2-4 of 8-64 experts per token.</td>
+      <td><strong>Sparse tensor instructions</strong> in the ISA. Hardware sparsity decoder that skips zero-weight rows. MoE dispatch via hardware router (not software).</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Security Isolation</strong></td>
+      <td>Multi-agent systems: one agent must not access another's memory or model weights. Agents may call untrusted tools.</td>
+      <td><strong>Hardware agent isolation</strong>: each agent gets a capability-based memory domain. Agent-switch flushes microarchitectural state (Spectre-safe).</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Energy Proportionality</strong></td>
+      <td>Agent workload is bursty: idle for seconds, then 100ms of intense compute. Always-on burns power.</td>
+      <td><strong>Sub-cycle clock gating</strong> + <strong>near-threshold voltage scaling</strong>. Idle islands power-gated independently. Wake-up latency < 10ns.</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Observability</strong></td>
+      <td>Agents are non-deterministic (LLM sampling, tool results). Debugging requires full execution trace at the instruction level.</td>
+      <td><strong>Per-agent execution trace buffer</strong> (on-chip SRAM). Compressed trace format. Replay capability for deterministic debugging.</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Proposed Architecture: lunahan_v2 "Orion"</h2>
+
+<div class="card">
+  <h3>lunahan_v2 — Agentic RISC-V Core</h3>
+
+<pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                    lunahan_v2 "Orion"                            │
+│                                                                  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │ Agent 0  │  │ Agent 1  │  │ Agent 2  │  │ Agent 3  │       │
+│  │ Context  │  │ Context  │  │ Context  │  │ Context  │       │
+│  │ (x0-x31) │  │ (x0-x31) │  │ (x0-x31) │  │ (x0-x31) │       │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘       │
+│       └──────────────┴──────────────┴──────────────┘           │
+│                          │                                       │
+│              ┌───────────┴───────────┐                          │
+│              │   Context Scheduler   │  ← HW context switch     │
+│              │   (round-robin /      │     (1 cycle)            │
+│              │    priority-based)    │                          │
+│              └───────────┬───────────┘                          │
+│                          │                                       │
+│  ┌───────────────────────┼───────────────────────────────┐     │
+│  │             5-Stage In-Order Pipeline                   │     │
+│  │  IF ──► ID ──► EX ──► MEM ──► WB                      │     │
+│  │   │                │                                    │     │
+│  │   │    ┌───────────┴───────────┐                       │     │
+│  │   │    │   Sparse Tensor Unit  │  ← Custom ISA ext     │     │
+│  │   │    │  (STU) — Attention     │     sp.matmul,        │     │
+│  │   │    │   MoE Router           │     sp.softmax,       │     │
+│  │   │    │   KV-Cache Manager     │     moe.dispatch      │     │
+│  │   │    └───────────────────────┘                       │     │
+│  │   │                                                    │     │
+│  │   └──────────── ATB ────────────┐                      │     │
+│  │                    (Agent Trace │ Buffer)              │     │
+│  └─────────────────────────────────┴──────────────────────┘     │
+│                          │                                       │
+│              ┌───────────┴───────────┐                          │
+│              │    Security Enclave    │  ← PMP per agent         │
+│              │  (capability-based)    │     Spectre fences       │
+│              └───────────────────────┘                          │
+│                          │                                       │
+│         ┌────────────────┼────────────────┐                     │
+│    ┌────┴────┐     ┌─────┴─────┐     ┌────┴────┐               │
+│    │ ICache  │     │  DCache   │     │ NPU I$  │               │
+│    │ (8KB)   │     │  (8KB)    │     │ (16KB)  │               │
+│    └─────────┘     └───────────┘     └─────────┘               │
+│                          │                                       │
+│                   AXI4 Bus (64-bit)                              │
+│         ┌──────────┬──────────┬──────────┬──────────┐          │
+│         │  SRAM    │  SRAM    │  KV-Cache│  NPU Wt  │          │
+│         │  IMEM    │  DMEM    │  (128KB) │  (256KB) │          │
+│         └──────────┴──────────┴──────────┴──────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+
+  <h4>Key Specifications</h4>
+  <table>
+    <tr><th>Parameter</th><th>lunahan_v1 (current)</th><th>lunahan_v2 "Orion" (proposed)</th></tr>
+    <tr><td>ISA</td><td>RV32IMC</td><td>RV32IMC + <strong>Agentic Extension (Xagentic)</strong> + Sparse Tensor (Xst)</td></tr>
+    <tr><td>Contexts</td><td>1 (single-thread)</td><td><strong>4 hardware contexts</strong> (1-cycle switch)</td></tr>
+    <tr><td>Pipeline</td><td>5-stage IF/ID/EX/MEM/WB</td><td>5-stage + STU co-processor</td></tr>
+    <tr><td>NPU interface</td><td>None</td><td><strong>Custom RISC-V instructions</strong> (not MMIO)</td></tr>
+    <tr><td>Cache</td><td>ICache 4KB, DCache 4KB</td><td>ICache 8KB, DCache 8KB, NPU I$ 16KB</td></tr>
+    <tr><td>KV-Cache</td><td>None</td><td><strong>128KB dedicated on-chip SRAM</strong></td></tr>
+    <tr><td>Security</td><td>Machine mode only</td><td>4 PMP regions + Spectre fences + agent isolation</td></tr>
+    <tr><td>Trace</td><td>None</td><td>4 × 8KB agent trace buffers (compressed)</td></tr>
+    <tr><td>Area (est.)</td><td>0.056 mm² (sky130)</td><td>0.18 mm² (sky130, 3× larger)</td></tr>
+    <tr><td>Power (est.)</td><td>0.95 mW @ 100 MHz</td><td>3.5 mW @ 100 MHz (active), 0.05 mW (idle)</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2>4. Custom ISA Extension for Agentic AI</h2>
+
+<div class="card">
+  <h3>Xagentic — Agent Management Instructions</h3>
+  <table>
+    <tr><th>Instruction</th><th>Encoding</th><th>Description</th></tr>
+    <tr><td><code>agent.switch id</code></td><td>R-type, funct7=0x01</td><td>Switch hardware context to agent <code>id</code> (0-3). Atomic. Saves/restores all 32 GPRs in 1 cycle via banked register file.</td></tr>
+    <tr><td><code>agent.spawn id,pc</code></td><td>I-type, funct3=0x0</td><td>Initialize agent context <code>id</code> with PC. Allocates stack, sets PMP region.</td></tr>
+    <tr><td><code>agent.kill id</code></td><td>I-type, funct3=0x1</td><td>Terminate agent. Flush trace buffer. Release PMP region.</td></tr>
+    <tr><td><code>agent.fence</code></td><td>I-type, funct3=0x2</td><td>Spectre fence: flush BTB, RSB, PHT. Required on agent context switch for security.</td></tr>
+    <tr><td><code>agent.trace rd</code></td><td>I-type, funct3=0x3</td><td>Read agent trace buffer pointer into <code>rd</code>. Enables self-monitoring.</td></tr>
+  </table>
+
+  <h3>Xst — Sparse Tensor Instructions</h3>
+  <table>
+    <tr><th>Instruction</th><th>Description</th></tr>
+    <tr><td><code>sp.matmul rd, rs1, rs2</code></td><td>Sparse matrix multiply. rs1 = sparse matrix pointer (CSR format), rs2 = dense vector. Hardware sparsity decoder skips zeros.</td></tr>
+    <tr><td><code>sp.softmax rd, rs1</code></td><td>Softmax with online normalization. Single-pass (no second pass for sum).</td></tr>
+    <tr><td><code>sp.attention rd, rs1, rs2, rs3</code></td><td>Fused attention: Q·K^T → softmax → ·V. Single instruction, hardware-pipelined.</td></tr>
+    <tr><td><code>moe.dispatch rd, rs1</code></td><td>MoE router: computes top-k expert indices from token embedding. Returns 2-bitmask of selected experts.</td></tr>
+    <tr><td><code>kv.store rs1, rs2</code></td><td>Store key-value pair to on-chip KV-cache SRAM. Hardware-managed LRU eviction.</td></tr>
+    <tr><td><code>kv.load rd, rs1</code></td><td>Load value by key from KV-cache. Content-addressable lookup.</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Open-Source Project Roadmap</h2>
+
+<div class="card">
+  <h3>Phase 1 — Foundation (Q2-Q3 2025) <span class="badge b-done">NOW</span></h3>
+  <table>
+    <tr><th>Project</th><th>Status</th><th>Repo</th></tr>
+    <tr><td><strong>lunahan_v1</strong> — DFF RISC-V core, sky130, 100 MHz</td><td><span class="badge b-done">DONE</span></td><td><a href="https://github.com/wuhannus/lunahan_v1">wuhannus/lunahan_v1</a></td></tr>
+    <tr><td><strong>lunahan_v1_sram</strong> — SRAM variant, formal equivalence verified</td><td><span class="badge b-done">DONE</span></td><td><a href="https://github.com/wuhannus/lunahan_v1_sram">wuhannus/lunahan_v1_sram</a></td></tr>
+    <tr><td><strong>pyCircuit integration</strong> — Python→MLIR→GDS flow</td><td><span class="badge b-done">DONE</span></td><td>Embedded in both repos</td></tr>
+  </table>
+
+  <h3>Phase 2 — Agent Extensions (Q3-Q4 2025) <span class="badge b-now">NEXT</span></h3>
+  <table>
+    <tr><th>Project</th><th>Description</th><th>Effort</th></tr>
+    <tr><td><strong>lunahan_v2_isa</strong></td><td>Define Xagentic + Xst ISA extensions. RISC-V opcode space allocation. Spike/GCC/LLVM toolchain patches.</td><td>4 weeks</td></tr>
+    <tr><td><strong>lunahan_v2_rtl</strong></td><td>Implement 4-context register file, context scheduler, sparse tensor unit in pyCircuit V5.</td><td>8 weeks</td></tr>
+    <tr><td><strong>lunahan_v2_sim</strong></td><td>Cycle-accurate simulator for Xagentic + Xst. Agent-switch latency verification.</td><td>4 weeks</td></tr>
+    <tr><td><strong>lunahan_v2_phys</strong></td><td>Physical design: sky130 + OpenROAD. Target 0.18 mm², 100 MHz.</td><td>6 weeks</td></tr>
+  </table>
+
+  <h3>Phase 3 — NPU Co-Design (2026) <span class="badge b-future">FUTURE</span></h3>
+  <table>
+    <tr><th>Project</th><th>Description</th></tr>
+    <tr><td><strong>orion_npu</strong></td><td>Open-source NPU with custom RISC-V instruction interface. 256 MACs, INT8/FP16. Shared memory with lunahan_v2. 28nm or sky130 target.</td></tr>
+    <tr><td><strong>orion_sdk</strong></td><td>Agent SDK: Python framework for deploying multi-agent systems on lunahan_v2 + orion_npu. Compiler from agent graph → Xagentic + Xst instruction stream.</td></tr>
+    <tr><td><strong>orion_tapeout</strong></td><td>TinyTapeout / Efabless shuttle submission. Full CPU+NPU SoC. First open-source agentic AI processor in silicon.</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2>6. Competitive Landscape &amp; Differentiation</h2>
+
+<div class="card">
+  <table>
+    <tr><th>Project</th><th>Approach</th><th>Strengths</th><th>Weakness for Agentic AI</th></tr>
+    <tr>
+      <td><strong>NVIDIA Grace-Hopper</strong></td>
+      <td>CPU + GPU via NVLink-C2C</td>
+      <td>Massive compute, proven ecosystem</td>
+      <td>GPU is still PCIe-class latency (~10μs). Overkill for small agents. $30K+.</td>
+    </tr>
+    <tr>
+      <td><strong>Apple M4 + ANE</strong></td>
+      <td>CPU + NPU on-die, shared memory</td>
+      <td>Tight integration, low power</td>
+      <td>Closed-source. NPU programming model opaque. No agent-specific hardware.</td>
+    </tr>
+    <tr>
+      <td><strong>Qualcomm Hexagon+NSP</strong></td>
+      <td>DSP + NPU + scalar</td>
+      <td>Low power, mobile-optimized</td>
+      <td>DSP-centric, not CPU-centric. Weak multi-agent support.</td>
+    </tr>
+    <tr>
+      <td><strong>Google TPU + Axion</strong></td>
+      <td>TPU for inference, Axion ARM for serving</td>
+      <td>Scale-out, cloud-native</td>
+      <td>TPU is PCIe-attached. Agent latency dominated by bus transfers.</td>
+    </tr>
+    <tr style="background:#1a2a1a">
+      <td><strong>lunahan_v2 "Orion" (ours)</strong></td>
+      <td>RISC-V + custom agent ISA + STU<br><strong>Open-source from day 1</strong></td>
+      <td>Hardware contexts, sparse compute, NPU as instruction target, security isolation, 1-cycle agent switch</td>
+      <td>Early stage. No silicon yet. Smaller community. Needs NPU partner.</td>
+    </tr>
+  </table>
+
+  <div class="hl">
+    <strong>Our differentiation:</strong> We are the <em>only</em> open-source project designing a CPU architecture specifically for agentic AI workloads — with hardware context switching, sparse tensor instructions, and security isolation built into the ISA itself, not layered on top as software abstractions.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>7. Call for Collaboration</h2>
+
+<div class="card">
+  <p>We are actively seeking collaborators in these areas:</p>
+  <div class="grid-3">
+    <div class="kpi"><div class="val">ISA</div><div class="lbl">RISC-V extension definition<br>GCC/LLVM toolchain</div></div>
+    <div class="kpi"><div class="val">NPU</div><div class="lbl">Open-source NPU design<br>Shared memory interface</div></div>
+    <div class="kpi"><div class="val">Silicon</div><div class="lbl">Tapeout shuttle access<br>Physical design review</div></div>
+  </div>
+  <p style="margin-top:1rem; text-align:center">
+    <strong>GitHub:</strong> <a href="https://github.com/wuhannus/lunahan_v1">wuhannus/lunahan_v1</a> ·
+    <strong>Contact:</strong> Open an issue or PR on the repo
+  </p>
+</div>
+
+<div class="footer">
+  May 2025 · Dr. Han Wu + DeepSeek V4 Pro · Open-source agentic AI CPU architecture vision<br>
+  <code>lunahan_v2_orion_vision.md</code> in project root
+</div>
+</div>
+</body>
+</html>
