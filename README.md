@@ -7,6 +7,10 @@
 > physical flow results presented here have **not been silicon-proven**.
 > The current stage is for **flow demonstration and methodology validation**
 > purposes only. Dr. Wu and his AI friend are actively continuing this work.
+>
+> This work is conducted under the supervision of **Chief Scientist Dr. Liao Heng**
+> (HUAWEI). The pyCircuit + XiangShan integration methodology was proposed by
+> **Huawei Fellow Du Wenhua**.
 
 **lunahan_v1** is an open-source, synthesizable RISC-V core implementing the
 **RV32IMC** instruction set. It combines the silicon-proven microarchitecture
