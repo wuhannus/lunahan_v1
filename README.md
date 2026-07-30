@@ -2,11 +2,7 @@
 
 > **⚠️ Project Status Notice**
 >
-> This project is generated under the guidance of **Dr. Han Wu** (wuhannus),
-> co-working with his AI collaborator **DeepSeek V4 Pro**. The design and
-> physical flow results presented here have **not been silicon-proven**.
-> The current stage is for **flow demonstration and methodology validation**
-> purposes only. Dr. Wu and his AI friend are actively continuing this work.
+> This work is in progress under the guidance of **Dr. Han Wu** and **Dr. Yaohua Zhang**, with the assistance of AI tools. The design and physical flow results presented here have **not been silicon-proven**. All results are based on pre-layout simulation only; post-layout simulation has not yet been completed. Please contact Dr. Han Wu or Dr. Yaohua Zhang for the latest progress before adopting or citing any results.
 >
 > This work is conducted under the supervision of **Chief Scientist Dr. Liao Heng**
 > (HUAWEI). The pyCircuit + XiangShan integration methodology was proposed by
